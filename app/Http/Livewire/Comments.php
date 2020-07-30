@@ -3,28 +3,48 @@
 namespace App\Http\Livewire;
 
 use Livewire\Component;
+use Livewire\WithPagination;
+
 use Carbon\Carbon;
+use App\Comment;
 
 class Comments extends Component
 {
-    public $comments = [
-        [
-            'body' => 'Lorem ipsum dolor sit, amet consectetur adipisicing elit. Veniam magni delectus sint dolor officia blanditiis quasi facere odio id, eos alias dolorem facilis libero reprehenderit eligendi provident quibusdam ipsam accusantium.',
-            'created_at' => '3 min ago',
-            'creator' => 'Kyaw Min Thu'
-        ]
-    ];
+    use WithPagination;
+    // public $comments ;
     public $newComment;
+    public function mount()
+    {
+        // $initialComments = Comment::latest()->get();
+        // $this->comments = $initialComments;
+    }
+
+    public function updated($field)
+    {
+        $this->validateOnly($field, ['newComment'=>'required|max:255']);
+    }
+
     public function addComment()
     {
-        array_unshift($this->comments,[
-            'body' => $this->newComment,
-            'created_at' => Carbon::now()->diffForHumans(),
-            'creator' => 'Kyaw Min Thu'
-        ]);
+        $this->validate(['newComment'=>'required|max:255']);
+        $createdComment = Comment::create(['body'=>$this->newComment,'user_id'=>1]);
+        $this->newComment = "";
+        session()->flash('message', 'Comment successfully added.');
+    }
+    
+    public function remove($commentId)
+    {
+        $comment = Comment::find($commentId);
+        $comment->delete();
+        session()->flash('message', 'Comment successfully deleted.');
+    }
+
+    public function paginationView()
+    {
+        return 'pagination-links';
     }
     public function render()
     {
-        return view('livewire.comments',['comments'=>$this->comments]);
+        return view('livewire.comments',['comments'=>Comment::latest()->paginate(3)]);
     }
 }
